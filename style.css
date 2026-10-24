@@ -70,7 +70,6 @@ h1 {
 }
 
 @keyframes bulbGlow {
-
     0% {
         transform: scale(1);
         filter: drop-shadow(0 0 5px yellow);
@@ -111,6 +110,16 @@ h1 {
     color: black;
 }
 
-@media(max-width:700px) {
+#nextLevelBtn:hover {
+    opacity: 0.9;
+}
 
-    .cell
+@media (max-width: 700px) {
+
+    .cell {
+        width: 45px;
+        height: 45px;
+        font-size: 26px;
+    }
+
+}
