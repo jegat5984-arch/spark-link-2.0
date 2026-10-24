@@ -1,3 +1,5 @@
+alert("JS Loaded");
+
 const board = document.getElementById("game-board");
 const statusText = document.getElementById("status");
 const levelText = document.getElementById("level");
