@@ -14,6 +14,17 @@ let solved = false;
 let size = 5;
 let cells = [];
 
+const CONNECTIONS = {
+    "━": ["left", "right"],
+    "┃": ["up", "down"],
+    "┏": ["right", "down"],
+    "┓": ["left", "down"],
+    "┗": ["up", "right"],
+    "┛": ["up", "left"],
+    "⚡": ["left", "right", "up", "down"],
+    "💡": ["left", "right", "up", "down"]
+};
+
 function getBoardSize() {
 
     if (level <= 5) return 5;
@@ -37,35 +48,33 @@ function randomTile() {
     ];
 
     return tiles[
-        Math.floor(
-            Math.random() * tiles.length
-        )
+        Math.floor(Math.random() * tiles.length)
     ];
-
 }
 
 function scrambleTile(tile) {
 
     const rotateMap = {
-
         "━": "┃",
         "┃": "━",
-
         "┏": "┓",
         "┓": "┛",
         "┛": "┗",
         "┗": "┏"
-
     };
 
-    const count =
+    let result = tile;
+
+    const turns =
         Math.floor(
             Math.random() * 4
         );
 
-    let result = tile;
-
-    for (let i = 0; i < count; i++) {
+    for (
+        let i = 0;
+        i < turns;
+        i++
+    ) {
 
         result =
             rotateMap[result] ||
@@ -85,93 +94,34 @@ function generateLevel() {
 
     cells =
         new Array(size * size)
-            .fill("");
-
-    // SOURCE
-
-    cells[0] = "⚡";
-
-    // TOP ROW PATH
-
-    for (let c = 1; c < size - 1; c++) {
-
-        cells[c] = "━";
-
-    }
-
-    // TOP RIGHT CORNER
-
-    cells[size - 1] = "┓";
-
-    // RIGHT WALL DOWN
-
-    for (
-        let r = 1;
-        r < size - 1;
-        r++
-    ) {
-
-        cells[
-            (r * size)
-            + (size - 1)
-        ] = "┃";
-
-    }
-
-    // BULB
-
-    cells[
-        cells.length - 1
-    ] = "💡";
-
-    // RANDOM FILL
+        .fill("");
 
     for (
         let i = 0;
         i < cells.length;
         i++
     ) {
-
-        if (
-            cells[i] === ""
-        ) {
-
-            cells[i] =
-                randomTile();
-
-        }
-
+        cells[i] = randomTile();
     }
 
-    // SAFE PATH
-
-    const safe =
-        new Set();
-
-    for (
-        let c = 0;
-        c < size;
-        c++
-    ) {
-
-        safe.add(c);
-
-    }
-
-    for (
-        let r = 0;
-        r < size;
-        r++
-    ) {
-
-        safe.add(
-            r * size
-            + (size - 1)
+    const sourceRow =
+        Math.floor(
+            Math.random() * size
         );
 
-    }
+    const bulbRow =
+        Math.floor(
+            Math.random() * size
+        );
 
-    // BURNT WIRES
+    const sourceIndex =
+        sourceRow * size;
+
+    const bulbIndex =
+        bulbRow * size + (size - 1);
+
+    cells[sourceIndex] = "⚡";
+    cells[bulbIndex] = "💡";
 
     const burntCount =
         Math.min(
@@ -185,33 +135,23 @@ function generateLevel() {
         placed < burntCount
     ) {
 
-        const randomIndex =
+        const index =
             Math.floor(
                 Math.random() *
                 cells.length
             );
 
         if (
-            !safe.has(
-                randomIndex
-            ) &&
-            cells[randomIndex] !==
-                "⚡" &&
-            cells[randomIndex] !==
-                "💡"
+            cells[index] !== "⚡" &&
+            cells[index] !== "💡"
         ) {
 
-            cells[randomIndex] =
-                "✖";
-
+            cells[index] = "✖";
             placed++;
 
         }
 
     }
-
-    // SCRAMBLE EVERYTHING
-    // except source bulb burnt
 
     for (
         let i = 0;
@@ -257,11 +197,9 @@ function drawBoard() {
             if (
                 cell === "✖"
             ) {
-
                 div.classList.add(
                     "burnt"
                 );
-
             }
 
             div.addEventListener(
@@ -271,19 +209,15 @@ function drawBoard() {
                     if (
                         !solved
                     ) {
-
                         rotateWire(
                             index
                         );
-
                     }
 
                 }
             );
 
-            board.appendChild(
-                div
-            );
+            board.appendChild(div);
 
         }
     );
@@ -300,9 +234,7 @@ function rotateWire(index) {
         value === "💡" ||
         value === "✖"
     ) {
-
         return;
-
     }
 
     const rotation = {
@@ -327,6 +259,157 @@ function rotateWire(index) {
 
     drawBoard();
 
+    checkWin();
+
+}
+
+function opposite(dir) {
+
+    if (dir === "up")
+        return "down";
+
+    if (dir === "down")
+        return "up";
+
+    if (dir === "left")
+        return "right";
+
+    return "left";
+
+}
+
+function getNeighbor(index, dir) {
+
+    const row =
+        Math.floor(index / size);
+
+    const col =
+        index % size;
+
+    if (
+        dir === "up" &&
+        row > 0
+    ) {
+        return index - size;
+    }
+
+    if (
+        dir === "down" &&
+        row < size - 1
+    ) {
+        return index + size;
+    }
+
+    if (
+        dir === "left" &&
+        col > 0
+    ) {
+        return index - 1;
+    }
+
+    if (
+        dir === "right" &&
+        col < size - 1
+    ) {
+        return index + 1;
+    }
+
+    return -1;
+
+}
+
+function powerReachesBulb() {
+
+    const sourceIndex =
+        cells.indexOf("⚡");
+
+    if (
+        sourceIndex === -1
+    ) {
+        return false;
+    }
+
+    const visited =
+        new Set();
+
+    const stack =
+        [sourceIndex];
+
+    while (
+        stack.length > 0
+    ) {
+
+        const current =
+            stack.pop();
+
+        if (
+            visited.has(current)
+        ) continue;
+
+        visited.add(current);
+
+        if (
+            cells[current] === "💡"
+        ) {
+            return true;
+        }
+
+        if (
+            cells[current] === "✖"
+        ) {
+            continue;
+        }
+
+        const exits =
+            CONNECTIONS[
+                cells[current]
+            ] || [];
+
+        exits.forEach(
+            dir => {
+
+                const next =
+                    getNeighbor(
+                        current,
+                        dir
+                    );
+
+                if (
+                    next === -1
+                ) {
+                    return;
+                }
+
+                if (
+                    cells[next] === "✖"
+                ) {
+                    return;
+                }
+
+                const nextExits =
+                    CONNECTIONS[
+                        cells[next]
+                    ] || [];
+
+                if (
+                    nextExits.includes(
+                        opposite(dir)
+                    )
+                ) {
+
+                    stack.push(
+                        next
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+    return false;
+
 }
 
 function rewardDiamond() {
@@ -335,80 +418,37 @@ function rewardDiamond() {
         Math.random() <
         0.05
     ) {
-
         diamonds++;
-
     }
-
-}
-
-function checkSolvedPath() {
-
-    const lastColumn =
-        size - 1;
-
-    for (
-        let c = 1;
-        c < size - 1;
-        c++
-    ) {
-
-        if (
-            cells[c] !==
-            "━"
-        ) {
-
-            return false;
-
-        }
-
-    }
-
-    if (
-        cells[size - 1] !==
-        "┓"
-    ) {
-
-        return false;
-
-    }
-
-    for (
-        let r = 1;
-        r < size - 1;
-        r++
-    ) {
-
-        const index =
-            (r * size)
-            + lastColumn;
-
-        if (
-            cells[index] !==
-            "┃"
-        ) {
-
-            return false;
-
-        }
-
-    }
-
-    return true;
 
 }
 
 function checkWin() {
 
-    if (
-        solved
-    ) return;
+    if (solved)
+        return;
 
     if (
-        checkSolvedPath()
+        powerReachesBulb()
     ) {
 
         solved = true;
+
+        document
+            .querySelectorAll(".cell")
+            .forEach(cell => {
+
+                if (
+                    cell.textContent === "💡"
+                ) {
+
+                    cell.classList.add(
+                        "bulb-on"
+                    );
+
+                }
+
+            });
 
         coins += 10;
 
@@ -432,11 +472,11 @@ function checkWin() {
             diamonds
         );
 
-        statusText.textContent =
-            "🎉 Power Restored!";
-
         coinsText.textContent =
             `${coins} 💎 ${diamonds}`;
+
+        statusText.textContent =
+            "🎉 Power Restored!";
 
         nextLevelBtn.style.display =
             "inline-block";
@@ -468,19 +508,6 @@ function loadLevel() {
         "none";
 
     drawBoard();
-
-    const observer =
-        new MutationObserver(
-            checkWin
-        );
-
-    observer.observe(
-        board,
-        {
-            childList: true,
-            subtree: true
-        }
-    );
 
 }
 
