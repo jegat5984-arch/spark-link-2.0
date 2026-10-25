@@ -25,6 +25,33 @@ const CONNECTIONS = {
     "💡": ["left", "right", "up", "down"]
 };
 
+const SVG_WIRES = {
+
+"━": `
+<svg viewBox="0 0 100 100" width="40" height="40">
+<line x1="10" y1="50"
+x2="90" y2="50"
+stroke="#00ffff"
+stroke-width="12"
+stroke-linecap="round"/>
+</svg>`,
+
+"┃": `
+<svg viewBox="0 0 100 100" width="40" height="40">
+<line x1="50" y1="10"
+x2="50" y2="90"
+stroke="#00ffff"
+stroke-width="12"
+stroke-linecap="round"/>
+</svg>`,
+
+"⚡": `
+<div style="font-size:32px">⚡</div>`,
+
+"💡": `
+<div style="font-size:32px">💡</div>`
+
+};
 function getBoardSize() {
 
     if (level <= 5) return 5;
@@ -415,8 +442,8 @@ function drawBoard() {
             div.className =
                 "cell";
 
-            div.textContent =
-                cell;
+            div.innerHTML =
+                SVG_WIRES[cell] || cell;
 
             if (
                 cell === "✖"
