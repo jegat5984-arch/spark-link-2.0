@@ -15,6 +15,22 @@ let solved = false;
 let size = 5;
 let cells = [];
 
+/* ------------ CONNECTION RULES ------------ */
+
+const CONNECTIONS = {
+    "━": ["left", "right"],
+    "┃": ["up", "down"],
+    "┏": ["right", "down"],
+    "┓": ["left", "down"],
+    "┗": ["up", "right"],
+    "┛": ["up", "left"],
+
+    "⚡": ["right", "down"],
+    "💡": ["left", "up"]
+};
+
+/* ------------ BOARD SIZE ------------ */
+
 function getBoardSize() {
 
     if (level <= 5) return 5;
@@ -25,6 +41,8 @@ function getBoardSize() {
 
     return 25;
 }
+
+/* ------------ RANDOM WIRES ------------ */
 
 function randomWire() {
 
@@ -44,6 +62,8 @@ function randomWire() {
     ];
 }
 
+/* ------------ LEVEL GENERATION ------------ */
+
 function generateLevel() {
 
     size = getBoardSize();
@@ -60,30 +80,27 @@ function generateLevel() {
     cells[0] = "⚡";
     cells[cells.length - 1] = "💡";
 
-    const burntCount =
-        Math.min(
-            Math.floor(level / 2),
-            size * 2
-        );
+    const burntCount = Math.min(
+        Math.floor(level / 2),
+        size * 2
+    );
 
     for (let i = 0; i < burntCount; i++) {
 
-        const index =
-            Math.floor(
-                Math.random() * cells.length
-            );
+        const index = Math.floor(
+            Math.random() * cells.length
+        );
 
         if (
             cells[index] !== "⚡" &&
             cells[index] !== "💡"
         ) {
-
             cells[index] = "✖";
-
         }
-
     }
 }
+
+/* ------------ DRAW BOARD ------------ */
 
 function drawBoard() {
 
@@ -95,7 +112,6 @@ function drawBoard() {
             document.createElement("div");
 
         div.className = "cell";
-
         div.textContent = cell;
 
         if (cell === "✖") {
@@ -116,8 +132,9 @@ function drawBoard() {
         board.appendChild(div);
 
     });
-
 }
+
+/* ------------ ROTATE ------------ */
 
 function rotateWire(index) {
 
@@ -142,8 +159,7 @@ function rotateWire(index) {
 
     };
 
-    cells[index] =
-        rotations[value];
+    cells[index] = rotations[value];
 
     moves++;
 
@@ -153,6 +169,8 @@ function rotateWire(index) {
 
     checkWin();
 }
+
+/* ------------ DIAMONDS ------------ */
 
 function rewardDiamond() {
 
@@ -172,15 +190,106 @@ function rewardDiamond() {
     }
 }
 
+/* ------------ PATH CHECK ------------ */
+
+function opposite(dir) {
+
+    if (dir === "up") return "down";
+    if (dir === "down") return "up";
+    if (dir === "left") return "right";
+
+    return "left";
+}
+
+function getNeighbor(index, dir) {
+
+    const row = Math.floor(index / size);
+    const col = index % size;
+
+    if (dir === "up" && row > 0)
+        return index - size;
+
+    if (dir === "down" && row < size - 1)
+        return index + size;
+
+    if (dir === "left" && col > 0)
+        return index - 1;
+
+    if (dir === "right" && col < size - 1)
+        return index + 1;
+
+    return -1;
+}
+
+function powerReachesBulb() {
+
+    const visited = new Set();
+
+    const stack = [0];
+
+    while (stack.length > 0) {
+
+        const current = stack.pop();
+
+        if (visited.has(current))
+            continue;
+
+        visited.add(current);
+
+        const tile = cells[current];
+
+        if (tile === "💡") {
+            return true;
+        }
+
+        if (tile === "✖") {
+            continue;
+        }
+
+        const exits =
+            CONNECTIONS[tile] || [];
+
+        exits.forEach(dir => {
+
+            const next =
+                getNeighbor(
+                    current,
+                    dir
+                );
+
+            if (next === -1)
+                return;
+
+            const nextTile =
+                cells[next];
+
+            if (nextTile === "✖")
+                return;
+
+            const nextExits =
+                CONNECTIONS[nextTile] || [];
+
+            if (
+                nextExits.includes(
+                    opposite(dir)
+                )
+            ) {
+                stack.push(next);
+            }
+
+        });
+
+    }
+
+    return false;
+}
+
+/* ------------ WIN ------------ */
+
 function checkWin() {
 
-    const targetMoves =
-        Math.floor(
-            (size * size) / 2
-        );
-
     if (
-        moves >= targetMoves &&
+        powerReachesBulb() &&
         !solved
     ) {
 
@@ -193,11 +302,9 @@ function checkWin() {
                 if (
                     cell.textContent === "💡"
                 ) {
-
                     cell.classList.add(
                         "bulb-on"
                     );
-
                 }
 
             });
@@ -207,9 +314,7 @@ function checkWin() {
         if (
             level % 10 === 0
         ) {
-
             diamonds++;
-
         }
 
         rewardDiamond();
@@ -228,13 +333,15 @@ function checkWin() {
             `${coins} 💎 ${diamonds}`;
 
         statusText.textContent =
-            "🎉 Level Complete!";
+            "🎉 Power Restored!";
 
         nextLevelBtn.style.display =
             "inline-block";
 
     }
 }
+
+/* ------------ LOAD LEVEL ------------ */
 
 function loadLevel() {
 
@@ -259,8 +366,9 @@ function loadLevel() {
         "none";
 
     drawBoard();
-
 }
+
+/* ------------ NEXT LEVEL ------------ */
 
 nextLevelBtn.addEventListener(
     "click",
