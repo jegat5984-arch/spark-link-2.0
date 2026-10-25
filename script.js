@@ -11,20 +11,8 @@ let diamonds = Number(localStorage.getItem("sparkDiamonds")) || 0;
 
 let moves = 0;
 let solved = false;
-
 let size = 5;
 let cells = [];
-
-const CONNECTIONS = {
-    "━": ["left", "right"],
-    "┃": ["up", "down"],
-    "┏": ["right", "down"],
-    "┓": ["left", "down"],
-    "┗": ["up", "right"],
-    "┛": ["up", "left"],
-    "⚡": ["right", "down"],
-    "💡": ["left", "up"]
-};
 
 function getBoardSize() {
 
@@ -37,9 +25,9 @@ function getBoardSize() {
     return 25;
 }
 
-function randomWire() {
+function randomTile() {
 
-    const list = [
+    const tiles = [
         "━",
         "┃",
         "┏",
@@ -48,11 +36,44 @@ function randomWire() {
         "┛"
     ];
 
-    return list[
+    return tiles[
         Math.floor(
-            Math.random() * list.length
+            Math.random() * tiles.length
         )
     ];
+
+}
+
+function scrambleTile(tile) {
+
+    const rotateMap = {
+
+        "━": "┃",
+        "┃": "━",
+
+        "┏": "┓",
+        "┓": "┛",
+        "┛": "┗",
+        "┗": "┏"
+
+    };
+
+    const count =
+        Math.floor(
+            Math.random() * 4
+        );
+
+    let result = tile;
+
+    for (let i = 0; i < count; i++) {
+
+        result =
+            rotateMap[result] ||
+            result;
+
+    }
+
+    return result;
 }
 
 function generateLevel() {
@@ -62,87 +83,232 @@ function generateLevel() {
     board.style.gridTemplateColumns =
         `repeat(${size}, 50px)`;
 
-    cells = [];
+    cells =
+        new Array(size * size)
+            .fill("");
 
-    for (let i = 0; i < size * size; i++) {
-        cells.push(randomWire());
-    }
+    // SOURCE
 
     cells[0] = "⚡";
-    cells[cells.length - 1] = "💡";
 
-    const burntCount = Math.min(
-        Math.floor(level / 2),
-        size * 2
-    );
+    // TOP ROW PATH
 
-    for (let i = 0; i < burntCount; i++) {
+    for (let c = 1; c < size - 1; c++) {
 
-        const index = Math.floor(
-            Math.random() * cells.length
-        );
+        cells[c] = "━";
+
+    }
+
+    // TOP RIGHT CORNER
+
+    cells[size - 1] = "┓";
+
+    // RIGHT WALL DOWN
+
+    for (
+        let r = 1;
+        r < size - 1;
+        r++
+    ) {
+
+        cells[
+            (r * size)
+            + (size - 1)
+        ] = "┃";
+
+    }
+
+    // BULB
+
+    cells[
+        cells.length - 1
+    ] = "💡";
+
+    // RANDOM FILL
+
+    for (
+        let i = 0;
+        i < cells.length;
+        i++
+    ) {
 
         if (
-            cells[index] !== "⚡" &&
-            cells[index] !== "💡"
+            cells[i] === ""
         ) {
-            cells[index] = "✖";
+
+            cells[i] =
+                randomTile();
+
         }
+
     }
+
+    // SAFE PATH
+
+    const safe =
+        new Set();
+
+    for (
+        let c = 0;
+        c < size;
+        c++
+    ) {
+
+        safe.add(c);
+
+    }
+
+    for (
+        let r = 0;
+        r < size;
+        r++
+    ) {
+
+        safe.add(
+            r * size
+            + (size - 1)
+        );
+
+    }
+
+    // BURNT WIRES
+
+    const burntCount =
+        Math.min(
+            Math.floor(level / 2),
+            15
+        );
+
+    let placed = 0;
+
+    while (
+        placed < burntCount
+    ) {
+
+        const randomIndex =
+            Math.floor(
+                Math.random() *
+                cells.length
+            );
+
+        if (
+            !safe.has(
+                randomIndex
+            ) &&
+            cells[randomIndex] !==
+                "⚡" &&
+            cells[randomIndex] !==
+                "💡"
+        ) {
+
+            cells[randomIndex] =
+                "✖";
+
+            placed++;
+
+        }
+
+    }
+
+    // SCRAMBLE EVERYTHING
+    // except source bulb burnt
+
+    for (
+        let i = 0;
+        i < cells.length;
+        i++
+    ) {
+
+        if (
+            cells[i] !== "⚡" &&
+            cells[i] !== "💡" &&
+            cells[i] !== "✖"
+        ) {
+
+            cells[i] =
+                scrambleTile(
+                    cells[i]
+                );
+
+        }
+
+    }
+
 }
 
 function drawBoard() {
 
     board.innerHTML = "";
 
-    cells.forEach((cell, index) => {
+    cells.forEach(
+        (cell, index) => {
 
-        const div =
-            document.createElement("div");
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-        div.className = "cell";
-        div.textContent = cell;
+            div.className =
+                "cell";
 
-        if (cell === "✖") {
-            div.classList.add("burnt");
-        }
+            div.textContent =
+                cell;
 
-        div.addEventListener("click", () => {
+            if (
+                cell === "✖"
+            ) {
 
-            if (!solved) {
-                rotateWire(index);
+                div.classList.add(
+                    "burnt"
+                );
+
             }
 
-        });
+            div.addEventListener(
+                "click",
+                () => {
 
-        board.appendChild(div);
+                    if (
+                        !solved
+                    ) {
 
-    });
+                        rotateWire(
+                            index
+                        );
+
+                    }
+
+                }
+            );
+
+            board.appendChild(
+                div
+            );
+
+        }
+    );
 
 }
 
-/* FIXED ROTATION */
-
 function rotateWire(index) {
 
-    const value = cells[index];
+    const value =
+        cells[index];
 
     if (
         value === "⚡" ||
         value === "💡" ||
         value === "✖"
     ) {
+
         return;
+
     }
 
-    const rotations = {
-
-        /* Straight */
+    const rotation = {
 
         "━": "┃",
         "┃": "━",
-
-        /* Corners */
 
         "┏": "┓",
         "┓": "┛",
@@ -151,158 +317,107 @@ function rotateWire(index) {
 
     };
 
-    cells[index] = rotations[value];
+    cells[index] =
+        rotation[value];
 
     moves++;
 
-    movesText.textContent = moves;
+    movesText.textContent =
+        moves;
 
     drawBoard();
 
-    checkWin();
 }
 
 function rewardDiamond() {
 
-    const chance = Math.random();
-
-    if (chance < 0.05) {
+    if (
+        Math.random() <
+        0.05
+    ) {
 
         diamonds++;
 
-        localStorage.setItem(
-            "sparkDiamonds",
-            diamonds
-        );
-
-        statusText.textContent +=
-            " 💎 Bonus Diamond!";
-
     }
 
 }
 
-function opposite(dir) {
+function checkSolvedPath() {
 
-    if (dir === "up") return "down";
-    if (dir === "down") return "up";
-    if (dir === "left") return "right";
+    const lastColumn =
+        size - 1;
 
-    return "left";
-}
+    for (
+        let c = 1;
+        c < size - 1;
+        c++
+    ) {
 
-function getNeighbor(index, dir) {
+        if (
+            cells[c] !==
+            "━"
+        ) {
 
-    const row = Math.floor(index / size);
-    const col = index % size;
+            return false;
 
-    if (dir === "up" && row > 0)
-        return index - size;
-
-    if (dir === "down" && row < size - 1)
-        return index + size;
-
-    if (dir === "left" && col > 0)
-        return index - 1;
-
-    if (dir === "right" && col < size - 1)
-        return index + 1;
-
-    return -1;
-}
-
-function powerReachesBulb() {
-
-    const visited = new Set();
-
-    const stack = [0];
-
-    while (stack.length > 0) {
-
-        const current = stack.pop();
-
-        if (visited.has(current))
-            continue;
-
-        visited.add(current);
-
-        const tile = cells[current];
-
-        if (tile === "💡") {
-            return true;
         }
-
-        if (tile === "✖") {
-            continue;
-        }
-
-        const exits =
-            CONNECTIONS[tile] || [];
-
-        exits.forEach(dir => {
-
-            const next =
-                getNeighbor(
-                    current,
-                    dir
-                );
-
-            if (next === -1)
-                return;
-
-            const nextTile =
-                cells[next];
-
-            if (nextTile === "✖")
-                return;
-
-            const nextExits =
-                CONNECTIONS[nextTile] || [];
-
-            if (
-                nextExits.includes(
-                    opposite(dir)
-                )
-            ) {
-
-                stack.push(next);
-
-            }
-
-        });
 
     }
 
-    return false;
+    if (
+        cells[size - 1] !==
+        "┓"
+    ) {
+
+        return false;
+
+    }
+
+    for (
+        let r = 1;
+        r < size - 1;
+        r++
+    ) {
+
+        const index =
+            (r * size)
+            + lastColumn;
+
+        if (
+            cells[index] !==
+            "┃"
+        ) {
+
+            return false;
+
+        }
+
+    }
+
+    return true;
+
 }
 
 function checkWin() {
 
     if (
-        powerReachesBulb() &&
-        !solved
+        solved
+    ) return;
+
+    if (
+        checkSolvedPath()
     ) {
 
         solved = true;
 
-        document
-            .querySelectorAll(".cell")
-            .forEach(cell => {
-
-                if (
-                    cell.textContent === "💡"
-                ) {
-                    cell.classList.add(
-                        "bulb-on"
-                    );
-                }
-
-            });
-
         coins += 10;
 
-        if (level % 10 === 0) {
+        if (
+            level % 10 === 0
+        ) {
+
             diamonds++;
+
         }
 
         rewardDiamond();
@@ -317,11 +432,11 @@ function checkWin() {
             diamonds
         );
 
-        coinsText.textContent =
-            `${coins} 💎 ${diamonds}`;
-
         statusText.textContent =
             "🎉 Power Restored!";
+
+        coinsText.textContent =
+            `${coins} 💎 ${diamonds}`;
 
         nextLevelBtn.style.display =
             "inline-block";
@@ -353,6 +468,19 @@ function loadLevel() {
         "none";
 
     drawBoard();
+
+    const observer =
+        new MutationObserver(
+            checkWin
+        );
+
+    observer.observe(
+        board,
+        {
+            childList: true,
+            subtree: true
+        }
+    );
 
 }
 
