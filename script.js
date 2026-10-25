@@ -96,58 +96,282 @@ function generateLevel() {
         new Array(size * size)
         .fill("");
 
+    const path = [];
+
+    let row =
+        Math.floor(
+            Math.random() * size
+        );
+
+    let col = 0;
+
+    path.push({
+        row,
+        col
+    });
+
+    while (
+        col < size - 1
+    ) {
+
+        const possible =
+            ["right"];
+
+        if (
+            row > 0 &&
+            Math.random() < 0.35
+        ) {
+            possible.push("up");
+        }
+
+        if (
+            row < size - 1 &&
+            Math.random() < 0.35
+        ) {
+            possible.push("down");
+        }
+
+        const dir =
+            possible[
+                Math.floor(
+                    Math.random() *
+                    possible.length
+                )
+            ];
+
+        let nextRow = row;
+        let nextCol = col;
+
+        if (dir === "right")
+            nextCol++;
+
+        if (dir === "up")
+            nextRow--;
+
+        if (dir === "down")
+            nextRow++;
+
+        const exists =
+            path.some(
+                p =>
+                    p.row === nextRow &&
+                    p.col === nextCol
+            );
+
+        if (!exists) {
+
+            row = nextRow;
+            col = nextCol;
+
+            path.push({
+                row,
+                col
+            });
+
+        }
+
+    }
+
+    const pathSet =
+        new Set();
+
+    function idx(r, c) {
+
+        return r * size + c;
+
+    }
+
+    path.forEach(p => {
+
+        pathSet.add(
+            idx(
+                p.row,
+                p.col
+            )
+        );
+
+    });
+
+    for (
+        let i = 0;
+        i < path.length;
+        i++
+    ) {
+
+        const current =
+            path[i];
+
+        const index =
+            idx(
+                current.row,
+                current.col
+            );
+
+        if (i === 0) {
+
+            cells[index] = "⚡";
+            continue;
+
+        }
+
+        if (
+            i ===
+            path.length - 1
+        ) {
+
+            cells[index] = "💡";
+            continue;
+
+        }
+
+        const prev =
+            path[i - 1];
+
+        const next =
+            path[i + 1];
+
+        const fromUp =
+            prev.row <
+            current.row;
+
+        const fromDown =
+            prev.row >
+            current.row;
+
+        const fromLeft =
+            prev.col <
+            current.col;
+
+        const fromRight =
+            prev.col >
+            current.col;
+
+        const toUp =
+            next.row <
+            current.row;
+
+        const toDown =
+            next.row >
+            current.row;
+
+        const toLeft =
+            next.col <
+            current.col;
+
+        const toRight =
+            next.col >
+            current.col;
+
+        const up =
+            fromUp || toUp;
+
+        const down =
+            fromDown || toDown;
+
+        const left =
+            fromLeft || toLeft;
+
+        const right =
+            fromRight || toRight;
+
+        if (
+            left &&
+            right
+        ) {
+
+            cells[index] = "━";
+
+        } else if (
+            up &&
+            down
+        ) {
+
+            cells[index] = "┃";
+
+        } else if (
+            up &&
+            right
+        ) {
+
+            cells[index] = "┗";
+
+        } else if (
+            up &&
+            left
+        ) {
+
+            cells[index] = "┛";
+
+        } else if (
+            down &&
+            right
+        ) {
+
+            cells[index] = "┏";
+
+        } else if (
+            down &&
+            left
+        ) {
+
+            cells[index] = "┓";
+
+        }
+
+    }
+
     for (
         let i = 0;
         i < cells.length;
         i++
     ) {
-        cells[i] = randomTile();
+
+        if (
+            cells[i] === ""
+        ) {
+
+            cells[i] =
+                randomTile();
+
+        }
+
     }
-
-    const sourceRow =
-        Math.floor(
-            Math.random() * size
-        );
-
-    const bulbRow =
-        Math.floor(
-            Math.random() * size
-        );
-
-    const sourceIndex =
-        sourceRow * size;
-
-    const bulbIndex =
-        bulbRow * size + (size - 1);
-
-    cells[sourceIndex] = "⚡";
-    cells[bulbIndex] = "💡";
 
     const burntCount =
         Math.min(
-            Math.floor(level / 2),
+            Math.floor(
+                level / 2
+            ),
             15
         );
 
-    let placed = 0;
+    let burnt = 0;
 
     while (
-        placed < burntCount
+        burnt <
+        burntCount
     ) {
 
-        const index =
+        const randomIndex =
             Math.floor(
                 Math.random() *
                 cells.length
             );
 
         if (
-            cells[index] !== "⚡" &&
-            cells[index] !== "💡"
+            !pathSet.has(
+                randomIndex
+            ) &&
+            cells[randomIndex] !==
+                "⚡" &&
+            cells[randomIndex] !==
+                "💡"
         ) {
 
-            cells[index] = "✖";
-            placed++;
+            cells[randomIndex] =
+                "✖";
+
+            burnt++;
 
         }
 
