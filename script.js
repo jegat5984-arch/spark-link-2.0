@@ -15,8 +15,6 @@ let solved = false;
 let size = 5;
 let cells = [];
 
-/* ------------ CONNECTION RULES ------------ */
-
 const CONNECTIONS = {
     "━": ["left", "right"],
     "┃": ["up", "down"],
@@ -24,12 +22,9 @@ const CONNECTIONS = {
     "┓": ["left", "down"],
     "┗": ["up", "right"],
     "┛": ["up", "left"],
-
     "⚡": ["right", "down"],
     "💡": ["left", "up"]
 };
-
-/* ------------ BOARD SIZE ------------ */
 
 function getBoardSize() {
 
@@ -41,8 +36,6 @@ function getBoardSize() {
 
     return 25;
 }
-
-/* ------------ RANDOM WIRES ------------ */
 
 function randomWire() {
 
@@ -61,8 +54,6 @@ function randomWire() {
         )
     ];
 }
-
-/* ------------ LEVEL GENERATION ------------ */
 
 function generateLevel() {
 
@@ -100,8 +91,6 @@ function generateLevel() {
     }
 }
 
-/* ------------ DRAW BOARD ------------ */
-
 function drawBoard() {
 
     board.innerHTML = "";
@@ -118,23 +107,21 @@ function drawBoard() {
             div.classList.add("burnt");
         }
 
-        div.addEventListener(
-            "click",
-            () => {
+        div.addEventListener("click", () => {
 
-                if (!solved) {
-                    rotateWire(index);
-                }
-
+            if (!solved) {
+                rotateWire(index);
             }
-        );
+
+        });
 
         board.appendChild(div);
 
     });
+
 }
 
-/* ------------ ROTATE ------------ */
+/* FIXED ROTATION */
 
 function rotateWire(index) {
 
@@ -150,12 +137,17 @@ function rotateWire(index) {
 
     const rotations = {
 
+        /* Straight */
+
         "━": "┃",
-        "┃": "┏",
+        "┃": "━",
+
+        /* Corners */
+
         "┏": "┓",
         "┓": "┛",
         "┛": "┗",
-        "┗": "━"
+        "┗": "┏"
 
     };
 
@@ -169,8 +161,6 @@ function rotateWire(index) {
 
     checkWin();
 }
-
-/* ------------ DIAMONDS ------------ */
 
 function rewardDiamond() {
 
@@ -187,10 +177,10 @@ function rewardDiamond() {
 
         statusText.textContent +=
             " 💎 Bonus Diamond!";
-    }
-}
 
-/* ------------ PATH CHECK ------------ */
+    }
+
+}
 
 function opposite(dir) {
 
@@ -274,7 +264,9 @@ function powerReachesBulb() {
                     opposite(dir)
                 )
             ) {
+
                 stack.push(next);
+
             }
 
         });
@@ -283,8 +275,6 @@ function powerReachesBulb() {
 
     return false;
 }
-
-/* ------------ WIN ------------ */
 
 function checkWin() {
 
@@ -311,9 +301,7 @@ function checkWin() {
 
         coins += 10;
 
-        if (
-            level % 10 === 0
-        ) {
+        if (level % 10 === 0) {
             diamonds++;
         }
 
@@ -339,9 +327,8 @@ function checkWin() {
             "inline-block";
 
     }
-}
 
-/* ------------ LOAD LEVEL ------------ */
+}
 
 function loadLevel() {
 
@@ -366,9 +353,8 @@ function loadLevel() {
         "none";
 
     drawBoard();
-}
 
-/* ------------ NEXT LEVEL ------------ */
+}
 
 nextLevelBtn.addEventListener(
     "click",
